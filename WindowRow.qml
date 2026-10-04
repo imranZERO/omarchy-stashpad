@@ -99,7 +99,7 @@ Item {
   Column {
     anchors.left: appIcon.right
     anchors.leftMargin: Style.space(8)
-    anchors.right: closeButton.left
+    anchors.right: rowHover.hovered ? closeButton.left : parent.right
     anchors.rightMargin: Style.space(8)
     anchors.verticalCenter: parent.verticalCenter
     spacing: 0
@@ -134,6 +134,9 @@ Item {
     property color hoverColor: root.accent
 
     signal clicked()
+
+    // Only shown while the pointer is over the row.
+    visible: rowHover.hovered
 
     width: Style.space(24)
     height: Style.space(24)
@@ -183,7 +186,7 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: Style.space(4)
     anchors.verticalCenter: parent.verticalCenter
-    glyph: root.stashed ? "−" : "+"
+    glyph: root.stashed ? "↩" : "+"
     tip: root.actionTooltip
     onClicked: root.activated()
   }

@@ -16,10 +16,10 @@ An Omarchy bar widget for Hyprland special workspaces (the scratchpad).
 
 ## Menu
 
-Each row shows the app icon, the window title and its class.
+Each row shows the app icon, the window title and its class. Titles use the full row width until you hover it.
 
 - **Click the row** to focus the window. For a stashed window this also reveals its scratchpad.
-- **`+` / `−`** sends the window to the scratchpad, or brings it back to the current workspace.
+- **`+` / `↩`** sends the window to the scratchpad, or brings it back to the current workspace. The `+`, `↩` and `×` buttons only appear while you hover a row.
 - **`×`** closes the window.
 - A dot on the icon marks a window that is asking for attention.
 - **Restore all** brings every stashed window back to the current workspace. **Stash all** sends every window on the current workspace to the scratchpad. Each appears when there are two or more windows.
