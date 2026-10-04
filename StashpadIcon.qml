@@ -9,10 +9,15 @@ Item {
   id: root
 
   property color color: Color.foreground
-  property color badgeTextColor: Color.background
   property int badgeCount: 0
 
   readonly property real size: Math.min(width, height)
+  // The badge is filled with the icon colour, so the digit takes whichever of
+  // near-black or near-white contrasts with it. Theme colours can't be used:
+  // on a transparent bar the icon and the theme background can both be light.
+  readonly property real luminance: 0.299 * color.r + 0.587 * color.g + 0.114 * color.b
+  readonly property color badgeTextColor: luminance > 0.55 ? "#101010" : "#ffffff"
+
   readonly property real stroke: Math.max(1, Math.round(size / 11))
   readonly property real inset: stroke / 2 + 0.5
   // Horizontal margin that narrows the frame.
