@@ -186,6 +186,7 @@ BarWidget {
             width: menuColumn.width
             toplevel: modelData
             stashed: true
+            actionTooltip: "Bring back to this workspace"
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             onActivated: root.release(modelData)
           }
@@ -225,6 +226,7 @@ BarWidget {
             width: menuColumn.width
             toplevel: modelData
             stashed: false
+            actionTooltip: "Send to scratchpad"
             fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
             onActivated: root.stash(modelData)
           }

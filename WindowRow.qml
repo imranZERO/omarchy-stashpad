@@ -1,5 +1,7 @@
 import QtQuick
+import Quickshell
 import qs.Commons
+import qs.Ui
 
 // One window in the scratchpad menu: title and class on the left, a +/- button
 // on the right. "+" stashes the window, "-" brings it back.
@@ -11,12 +13,31 @@ Item {
   property color foreground: Color.popups.text
   property color accent: Color.accent
   property string fontFamily: Style.font.family
+  property string actionTooltip: ""
 
   signal activated()
 
   readonly property var ipc: toplevel ? toplevel.lastIpcObject : null
   readonly property string windowClass: ipc && ipc["class"] ? String(ipc["class"]) : ""
   readonly property string windowTitle: toplevel && toplevel.title ? String(toplevel.title) : (windowClass || "untitled")
+
+  // Referencing the model is what makes Quickshell load desktop entries; it
+  // also re-runs iconSource once they arrive.
+  readonly property var apps: DesktopEntries.applications
+
+  // Window class -> desktop entry -> themed icon, falling back to a generic one.
+  readonly property string iconSource: {
+    if (apps.values.length === 0) return Quickshell.iconPath("application-x-executable", true)
+    var generic = Quickshell.iconPath("application-x-executable", true)
+    if (windowClass === "") return generic
+    var entry = DesktopEntries.heuristicLookup(windowClass)
+    var name = entry && entry.icon ? String(entry.icon) : windowClass
+    if (name.charAt(0) === "/") return "file://" + name
+    var themed = Quickshell.iconPath(name, true)
+    if (themed.length > 0) return themed
+    themed = Quickshell.iconPath(windowClass.toLowerCase(), true)
+    return themed.length > 0 ? themed : generic
+  }
 
   implicitHeight: Style.space(34)
   implicitWidth: Style.space(280)
@@ -29,8 +50,23 @@ Item {
 
   HoverHandler { id: rowHover }
 
-  Column {
+  Image {
+    id: appIcon
     anchors.left: parent.left
+    anchors.leftMargin: Style.space(8)
+    anchors.verticalCenter: parent.verticalCenter
+    width: Style.space(20)
+    height: Style.space(20)
+    source: root.iconSource
+    // Decode at physical pixels so the icon stays sharp on scaled displays.
+    sourceSize: Qt.size(width * 2, height * 2)
+    fillMode: Image.PreserveAspectFit
+    asynchronous: true
+    smooth: true
+  }
+
+  Column {
+    anchors.left: appIcon.right
     anchors.leftMargin: Style.space(8)
     anchors.right: button.left
     anchors.rightMargin: Style.space(8)
@@ -87,6 +123,12 @@ Item {
       hoverEnabled: true
       cursorShape: Qt.PointingHandCursor
       onClicked: root.activated()
+    }
+
+    PanelToolTip {
+      visible: root.actionTooltip !== "" && buttonMouse.containsMouse
+      text: root.actionTooltip
+      fontFamily: root.fontFamily
     }
   }
 }
