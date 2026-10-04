@@ -12,7 +12,6 @@ Item {
   property string actionTooltip: ""
   property color foreground: Color.popups.text
   property color accent: Color.accent
-  property string fontFamily: Style.font.family
 
   signal actionClicked()
 
@@ -29,7 +28,7 @@ Item {
     color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.6)
     elide: Text.ElideRight
     textFormat: Text.PlainText
-    font.family: root.fontFamily
+    font.family: Style.font.family
     font.pixelSize: Style.font.caption
     font.bold: true
   }
@@ -43,7 +42,7 @@ Item {
     text: root.actionText
     color: actionMouse.containsMouse ? root.accent
       : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.7)
-    font.family: root.fontFamily
+    font.family: Style.font.family
     font.pixelSize: Style.font.caption
     font.underline: actionMouse.containsMouse
 
@@ -59,7 +58,6 @@ Item {
     PanelToolTip {
       visible: root.actionTooltip !== "" && actionMouse.containsMouse
       text: root.actionTooltip
-      fontFamily: root.fontFamily
     }
   }
 }

@@ -13,9 +13,7 @@ Item {
   property bool stashed: false
   property color foreground: Color.popups.text
   property color accent: Color.accent
-  property string fontFamily: Style.font.family
   property string actionTooltip: ""
-  property string closeTooltip: "Close window"
 
   signal activated()
   signal focusRequested()
@@ -110,7 +108,7 @@ Item {
       color: root.foreground
       elide: Text.ElideRight
       textFormat: Text.PlainText
-      font.family: root.fontFamily
+      font.family: Style.font.family
       font.pixelSize: Style.font.body
     }
 
@@ -121,7 +119,7 @@ Item {
       color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55)
       elide: Text.ElideRight
       textFormat: Text.PlainText
-      font.family: root.fontFamily
+      font.family: Style.font.family
       font.pixelSize: Style.font.caption
     }
   }
@@ -150,7 +148,7 @@ Item {
       anchors.centerIn: parent
       text: btn.glyph
       color: buttonMouse.containsMouse ? root.contrastOn(btn.hoverColor) : root.foreground
-      font.family: root.fontFamily
+      font.family: Style.font.family
       font.pixelSize: Style.font.title
       renderType: Text.NativeRendering
     }
@@ -166,7 +164,6 @@ Item {
     PanelToolTip {
       visible: btn.tip !== "" && buttonMouse.containsMouse
       text: btn.tip
-      fontFamily: root.fontFamily
     }
   }
 
@@ -176,7 +173,7 @@ Item {
     anchors.rightMargin: Style.space(4)
     anchors.verticalCenter: parent.verticalCenter
     glyph: "×"
-    tip: root.closeTooltip
+    tip: "Close window"
     hoverColor: Color.urgent
     onClicked: root.closeRequested()
   }

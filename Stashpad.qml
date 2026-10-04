@@ -17,7 +17,13 @@ BarWidget {
   readonly property bool hideWhenEmpty: setting("hideWhenEmpty", false) === true
   readonly property string customActiveColor: String(setting("activeColor", ""))
 
-  readonly property var workspace: findSpecial(specialName)
+  readonly property var workspace: {
+    var values = Hyprland.workspaces.values
+    for (var i = 0; i < values.length; i++) {
+      if (values[i].name === specialName) return values[i]
+    }
+    return null
+  }
 
   readonly property var stashedWindows: workspace ? workspace.toplevels.values : []
   readonly property int count: stashedWindows.length
@@ -52,16 +58,7 @@ BarWidget {
 
   property bool menuOpen: false
 
-  function open() { menuOpen = true }
   function close() { menuOpen = false }
-
-  function findSpecial(name) {
-    var values = Hyprland.workspaces.values
-    for (var i = 0; i < values.length; i++) {
-      if (values[i].name === name) return values[i]
-    }
-    return null
-  }
 
   // Run one or more Hyprland Lua expressions through hyprctl. They are chained
   // as separate commands, since one expression can't hold several dispatches.
@@ -201,7 +198,6 @@ BarWidget {
         width: parent.width
         spacing: Style.space(2)
 
-        readonly property string menuFont: root.bar ? root.bar.fontFamily : Style.font.family
         readonly property color dimText: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.45)
         readonly property color ruleColor: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.15)
 
@@ -210,7 +206,6 @@ BarWidget {
           title: "In " + root.workspaceName
           actionText: root.count > 1 ? "Restore all" : ""
           actionTooltip: "Bring every stashed window back to this workspace"
-          fontFamily: menuColumn.menuFont
           onActionClicked: root.releaseAll(root.stashedWindows)
         }
 
@@ -218,7 +213,7 @@ BarWidget {
           visible: root.count === 0
           text: "Nothing here yet"
           color: menuColumn.dimText
-          font.family: menuColumn.menuFont
+          font.family: Style.font.family
           font.pixelSize: Style.font.body
           leftPadding: Style.space(8)
           bottomPadding: Style.space(4)
@@ -232,7 +227,6 @@ BarWidget {
             toplevel: modelData
             stashed: true
             actionTooltip: "Bring back to this workspace"
-            fontFamily: menuColumn.menuFont
             onActivated: root.release(modelData)
             onFocusRequested: root.focusWindow(modelData)
             onCloseRequested: root.closeWindow(modelData)
@@ -250,7 +244,6 @@ BarWidget {
           title: "On this workspace"
           actionText: root.currentWindows.length > 1 ? "Stash all" : ""
           actionTooltip: "Send every window on this workspace to " + root.workspaceName
-          fontFamily: menuColumn.menuFont
           onActionClicked: root.stashAll()
         }
 
@@ -258,7 +251,7 @@ BarWidget {
           visible: root.currentWindows.length === 0
           text: "No windows"
           color: menuColumn.dimText
-          font.family: menuColumn.menuFont
+          font.family: Style.font.family
           font.pixelSize: Style.font.body
           leftPadding: Style.space(8)
           bottomPadding: Style.space(4)
@@ -272,7 +265,6 @@ BarWidget {
             toplevel: modelData
             stashed: false
             actionTooltip: "Send to " + root.workspaceName
-            fontFamily: menuColumn.menuFont
             onActivated: root.stash(modelData)
             onFocusRequested: root.focusWindow(modelData)
             onCloseRequested: root.closeWindow(modelData)
