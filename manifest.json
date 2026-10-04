@@ -5,7 +5,7 @@
   "version": "1.2.0",
   "author": "imranZERO",
   "license": "MIT",
-  "description": "Stashpad is a scratchpad indicator for Hyprland special workspaces: icon with count badge, toggle, and a menu to stash or restore windows",
+  "description": "A scratchpad widget for your bar. See what is stashed and move windows in and out.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Stashpad",
-    "description": "Dimmed when empty, highlighted while shown. Left click toggles, middle click stashes the focused window, right click opens a stash/restore menu.",
+    "description": "Left click toggles the scratchpad. Middle click stashes the focused window. Right click opens a menu to stash, restore, focus or close windows.",
     "category": "Compositor",
     "allowMultiple": true
   }
