@@ -15,6 +15,8 @@ Item {
   readonly property real size: Math.min(width, height)
   readonly property real stroke: Math.max(1, Math.round(size / 11))
   readonly property real inset: stroke / 2 + 0.5
+  // Horizontal margin that narrows the frame.
+  readonly property real side: size * 0.07
 
   Shape {
     anchors.centerIn: parent
@@ -34,9 +36,9 @@ Item {
       joinStyle: ShapePath.RoundJoin
 
       readonly property real r: root.size * 0.2
-      readonly property real l: root.inset
+      readonly property real l: root.side + root.inset
       readonly property real t: root.size * 0.1 + root.inset
-      readonly property real rt: root.size - root.inset
+      readonly property real rt: root.size - root.side - root.inset
       readonly property real b: root.size * 0.92 - root.inset
 
       startX: frame.l + frame.r; startY: frame.t
@@ -55,8 +57,8 @@ Item {
       strokeColor: root.color
       strokeWidth: root.stroke
       capStyle: ShapePath.RoundCap
-      startX: root.inset; startY: root.size * 0.38
-      PathLine { x: root.size - root.inset; y: root.size * 0.38 }
+      startX: frame.l; startY: root.size * 0.38
+      PathLine { x: frame.rt; y: root.size * 0.38 }
     }
 
     // Drawer handle.
@@ -72,23 +74,38 @@ Item {
   Rectangle {
     id: badge
     visible: root.badgeCount > 0
-    readonly property real d: Math.round(root.size * 0.58)
+    readonly property real d: Math.round(root.size * 0.64)
     width: Math.max(d, countText.implicitWidth + root.size * 0.22)
     height: d
     radius: height / 2
     color: root.color
     // Pull the badge out past the frame corner.
-    x: root.width / 2 + root.size / 2 - width * 0.62
+    x: root.width / 2 + root.size / 2 - root.side - width * 0.55
     y: root.height / 2 - root.size / 2 - height * 0.22
 
+    TextMetrics {
+      id: countMetrics
+      font: countText.font
+      text: countText.text
+    }
+
+    // Centre the painted digits, not the line box (which carries ascent and
+    // descent space). Font metrics round to whole pixels, so the text is laid
+    // out at twice the size and scaled down: the rounding error halves.
     Text {
       id: countText
-      anchors.centerIn: parent
+      readonly property real shrink: 0.5
+      readonly property real inkX: countMetrics.tightBoundingRect.x + countMetrics.tightBoundingRect.width / 2
+      readonly property real inkY: baselineOffset + countMetrics.tightBoundingRect.y + countMetrics.tightBoundingRect.height / 2
+      x: badge.width / 2 - width / 2 - shrink * (inkX - width / 2)
+      y: badge.height / 2 - height / 2 - shrink * (inkY - height / 2)
+      scale: shrink
+      transformOrigin: Item.Center
       text: root.badgeCount > 9 ? "9+" : String(root.badgeCount)
       color: root.badgeTextColor
-      font.pixelSize: Math.round(root.size * 0.4)
+      font.pixelSize: Math.round(root.size * 0.44) / shrink
       font.bold: true
-      renderType: Text.NativeRendering
+      renderType: Text.QtRendering
     }
   }
 }
