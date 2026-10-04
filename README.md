@@ -1,4 +1,4 @@
-# Scratchpad
+# Stashpad
 
 An Omarchy bar widget for Hyprland special workspaces (the scratchpad).
 
@@ -16,10 +16,10 @@ An Omarchy bar widget for Hyprland special workspaces (the scratchpad).
 
 ## Install
 
-Copy or clone this folder to `~/.config/omarchy/plugins/imranzero.scratchpad`, then enable the widget in the bar settings or add it to a section of `bar.layout` in `~/.config/omarchy/shell.json`:
+Copy or clone this folder to `~/.config/omarchy/plugins/imranzero.stashpad`, then enable the widget in the bar settings or add it to a section of `bar.layout` in `~/.config/omarchy/shell.json`:
 
 ```json
-{ "id": "imranzero.scratchpad" }
+{ "id": "imranzero.stashpad" }
 ```
 
 ## Settings
@@ -36,13 +36,13 @@ Put settings on the layout entry itself:
 You can add the widget more than once, one per special workspace:
 
 ```json
-{ "id": "imranzero.scratchpad" },
-{ "id": "imranzero.scratchpad", "workspace": "music", "hideWhenEmpty": true }
+{ "id": "imranzero.stashpad" },
+{ "id": "imranzero.stashpad", "workspace": "music", "hideWhenEmpty": true }
 ```
 
 ## Uninstall
 
-Remove the entry from `shell.json` and delete `~/.config/omarchy/plugins/imranzero.scratchpad`.
+Remove the entry from `shell.json` and delete `~/.config/omarchy/plugins/imranzero.stashpad`.
 
 ## License
 

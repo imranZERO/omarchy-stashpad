@@ -8,7 +8,7 @@ import qs.Ui
 // opens a menu to stash windows from the current workspace or bring them back.
 BarWidget {
   id: root
-  moduleName: "imranzero.scratchpad"
+  moduleName: "imranzero.stashpad"
 
   // Strip quotes so a user-supplied name can't break the Lua expression.
   readonly property string workspaceName: String(setting("workspace", "scratchpad")).replace(/["'\\]/g, "")
@@ -119,11 +119,11 @@ BarWidget {
     active: root.shown
     activeColor: root.customActiveColor !== "" ? root.customActiveColor
       : (root.bar ? root.bar.urgent : Color.accent)
-    tooltipText: root.count === 0 ? "Scratchpad — empty"
-      : "Scratchpad — " + root.count + (root.count === 1 ? " window" : " windows")
+    tooltipText: root.count === 0 ? "Stashpad — empty"
+      : "Stashpad — " + root.count + (root.count === 1 ? " window" : " windows")
 
     iconComponent: Component {
-      ScratchpadIcon {
+      StashpadIcon {
         color: button.active ? button.activeColor : button.foreground
         badgeCount: root.showCount ? root.count : 0
       }
