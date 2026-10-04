@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "imranzero.scratchpad",
   "name": "Scratchpad",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "imranZERO",
   "license": "MIT",
-  "description": "Scratchpad indicator for Hyprland special workspaces: window count, contents tooltip, toggle, stash and cycle",
+  "description": "Scratchpad indicator for Hyprland special workspaces: icon with count badge, toggle, and a menu to stash or restore windows",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Scratchpad",
-    "description": "Dimmed when empty, highlighted while shown. Left click toggles, right click stashes the focused window, scroll cycles windows.",
+    "description": "Dimmed when empty, highlighted while shown. Left click toggles, right click opens a stash/restore menu, scroll cycles windows.",
     "category": "Compositor",
     "allowMultiple": true
   }
