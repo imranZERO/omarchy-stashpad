@@ -4,26 +4,20 @@ import qs.Commons
 import qs.Ui
 
 // Bar indicator for a Hyprland special workspace (the "scratchpad").
-// Dimmed when empty, highlighted while shown, with a count badge. Right click
-// opens a menu to stash windows from the current workspace or bring them back.
+// Dimmed when empty, highlighted while shown, with a count badge that turns
+// urgent when a stashed window wants attention. Right click opens a menu to
+// stash windows from the current workspace, bring them back, focus or close them.
 BarWidget {
   id: root
   moduleName: "imranzero.stashpad"
 
-  // Strip quotes so a user-supplied name can't break the Lua expression.
-  readonly property string workspaceName: String(setting("workspace", "scratchpad")).replace(/["'\\]/g, "")
+  readonly property string workspaceName: String(setting("workspace", "scratchpad"))
   readonly property string specialName: "special:" + workspaceName
   readonly property bool showCount: setting("showCount", true) === true
   readonly property bool hideWhenEmpty: setting("hideWhenEmpty", false) === true
   readonly property string customActiveColor: String(setting("activeColor", ""))
 
-  readonly property var workspace: {
-    var values = Hyprland.workspaces.values
-    for (var i = 0; i < values.length; i++) {
-      if (values[i].name === specialName) return values[i]
-    }
-    return null
-  }
+  readonly property var workspace: findSpecial(specialName)
 
   readonly property var stashedWindows: workspace ? workspace.toplevels.values : []
   readonly property int count: stashedWindows.length
@@ -47,48 +41,94 @@ BarWidget {
     return false
   }
 
+  // A stashed window is asking for attention while the scratchpad is hidden.
+  readonly property bool attention: {
+    if (shown) return false
+    for (var i = 0; i < stashedWindows.length; i++) {
+      if (stashedWindows[i].urgent === true) return true
+    }
+    return false
+  }
+
   property bool menuOpen: false
 
   function open() { menuOpen = true }
   function close() { menuOpen = false }
 
-  function dispatch(expression) {
-    if (!root.bar) return
-    root.bar.run("hyprctl dispatch_lua_expression '" + expression + "'")
+  function findSpecial(name) {
+    var values = Hyprland.workspaces.values
+    for (var i = 0; i < values.length; i++) {
+      if (values[i].name === name) return values[i]
+    }
+    return null
+  }
+
+  // Run one or more Hyprland Lua expressions through hyprctl. They are chained
+  // as separate commands, since one expression can't hold several dispatches.
+  function dispatchAll(expressions) {
+    if (!root.bar || expressions.length === 0) return
+    var commands = []
+    for (var i = 0; i < expressions.length; i++)
+      commands.push("hyprctl dispatch_lua_expression '" + expressions[i] + "'")
+    root.bar.run(commands.join(" ; "))
+  }
+
+  function dispatch(expression) { dispatchAll([expression]) }
+
+  // Hyprland reports addresses without the 0x prefix that dispatchers expect.
+  function selector(toplevel) { return "address:0x" + toplevel.address }
+
+  function currentSelector() {
+    var target = currentWorkspace
+    if (!target) return ""
+    return target.id > 0 ? String(target.id) : "name:" + target.name
+  }
+
+  function moveExpression(toplevel, workspaceSelector) {
+    return 'hl.dsp.window.move({ workspace = "' + workspaceSelector + '", window = "' + selector(toplevel) + '", follow = false })'
   }
 
   function toggle() {
     dispatch('hl.dsp.workspace.toggle_special("' + workspaceName + '")')
   }
 
-  function selector(toplevel) {
-    var address = String(toplevel.address).replace(/[^0-9a-fA-Fx]/g, "")
-    return "address:" + (address.indexOf("0x") === 0 ? address : "0x" + address)
+  // Middle click: stash whichever window has focus.
+  function stashFocused() {
+    dispatch('hl.dsp.window.move({ workspace = "' + specialName + '", follow = false })')
   }
 
-  function stash(toplevel) {
-    dispatch('hl.dsp.window.move({ workspace = "' + specialName + '", window = "' + selector(toplevel) + '", follow = false })')
-  }
+  function stash(toplevel) { dispatch(moveExpression(toplevel, specialName)) }
 
   function release(toplevel) {
-    var target = currentWorkspace
-    if (!target) return
-    var id = target.id > 0 ? String(target.id) : "name:" + String(target.name).replace(/["'\\]/g, "")
-    dispatch('hl.dsp.window.move({ workspace = "' + id + '", window = "' + selector(toplevel) + '", follow = false })')
+    var target = currentSelector()
+    if (target !== "") dispatch(moveExpression(toplevel, target))
   }
 
-  // Scroll opens the scratchpad first, then cycles focus through its windows.
-  property double lastWheel: 0
-  function cycle(delta) {
-    var now = Date.now()
-    if (now - lastWheel < 150) return
-    lastWheel = now
-    if (count === 0) return
-    if (!shown) toggle()
-    else dispatch("hl.dsp.window.cycle_next({ next = " + (delta < 0 ? "true" : "false") + " })")
+  function stashAll() {
+    var expressions = []
+    for (var i = 0; i < currentWindows.length; i++)
+      expressions.push(moveExpression(currentWindows[i], specialName))
+    dispatchAll(expressions)
   }
 
-  onMenuOpenChanged: if (menuOpen) { Hyprland.refreshToplevels(); Hyprland.refreshWorkspaces() }
+  function releaseAll(windows) {
+    var target = currentSelector()
+    if (target === "") return
+    var expressions = []
+    for (var i = 0; i < windows.length; i++)
+      expressions.push(moveExpression(windows[i], target))
+    dispatchAll(expressions)
+  }
+
+  // Focusing a window inside a special workspace also reveals that workspace.
+  function focusWindow(toplevel) {
+    close()
+    dispatch('hl.dsp.focus({ window = "' + selector(toplevel) + '" })')
+  }
+
+  function closeWindow(toplevel) {
+    dispatch('hl.dsp.window.close({ window = "' + selector(toplevel) + '" })')
+  }
 
   // Monitor IPC objects (which carry specialWorkspace) aren't pushed on
   // special-workspace changes, so re-query them when one happens.
@@ -121,19 +161,22 @@ BarWidget {
       : (root.bar ? root.bar.urgent : Color.accent)
     tooltipText: root.count === 0 ? "Stashpad — empty"
       : "Stashpad — " + root.count + (root.count === 1 ? " window" : " windows")
+        + (root.attention ? " (needs attention)" : "")
 
     iconComponent: Component {
       StashpadIcon {
         color: button.active ? button.activeColor : button.foreground
         badgeCount: root.showCount ? root.count : 0
+        attention: root.attention
+        attentionColor: root.bar ? root.bar.urgent : Color.urgent
       }
     }
 
     onPressed: function(mouseButton) {
       if (mouseButton === Qt.RightButton) root.menuOpen = !root.menuOpen
+      else if (mouseButton === Qt.MiddleButton) root.stashFocused()
       else if (mouseButton === Qt.LeftButton) { root.close(); root.toggle() }
     }
-    onWheelMoved: function(delta) { root.cycle(delta) }
   }
 
   PopupCard {
@@ -143,7 +186,7 @@ BarWidget {
     bar: root.bar
     open: root.menuOpen
     padding: Style.space(8)
-    contentWidth: popup.fittedContentWidth(Style.space(300))
+    contentWidth: popup.fittedContentWidth(Style.space(360))
     contentHeight: popup.fittedContentHeight(menuColumn.implicitHeight, Style.space(520))
 
     Flickable {
@@ -158,22 +201,24 @@ BarWidget {
         width: parent.width
         spacing: Style.space(2)
 
-        Text {
-          text: "In scratchpad"
-          color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.6)
-          font.family: root.bar ? root.bar.fontFamily : Style.font.family
-          font.pixelSize: Style.font.caption
-          font.bold: true
-          leftPadding: Style.space(8)
-          topPadding: Style.space(2)
-          bottomPadding: Style.space(2)
+        readonly property string menuFont: root.bar ? root.bar.fontFamily : Style.font.family
+        readonly property color dimText: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.45)
+        readonly property color ruleColor: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.15)
+
+        SectionHeader {
+          width: menuColumn.width
+          title: "In " + root.workspaceName
+          actionText: root.count > 1 ? "Restore all" : ""
+          actionTooltip: "Bring every stashed window back to this workspace"
+          fontFamily: menuColumn.menuFont
+          onActionClicked: root.releaseAll(root.stashedWindows)
         }
 
         Text {
           visible: root.count === 0
           text: "Nothing here yet"
-          color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.45)
-          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          color: menuColumn.dimText
+          font.family: menuColumn.menuFont
           font.pixelSize: Style.font.body
           leftPadding: Style.space(8)
           bottomPadding: Style.space(4)
@@ -187,33 +232,33 @@ BarWidget {
             toplevel: modelData
             stashed: true
             actionTooltip: "Bring back to this workspace"
-            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            fontFamily: menuColumn.menuFont
             onActivated: root.release(modelData)
+            onFocusRequested: root.focusWindow(modelData)
+            onCloseRequested: root.closeWindow(modelData)
           }
         }
 
         Rectangle {
           width: menuColumn.width
           height: 1
-          color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.15)
+          color: menuColumn.ruleColor
         }
 
-        Text {
-          text: "On this workspace"
-          color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.6)
-          font.family: root.bar ? root.bar.fontFamily : Style.font.family
-          font.pixelSize: Style.font.caption
-          font.bold: true
-          leftPadding: Style.space(8)
-          topPadding: Style.space(6)
-          bottomPadding: Style.space(2)
+        SectionHeader {
+          width: menuColumn.width
+          title: "On this workspace"
+          actionText: root.currentWindows.length > 1 ? "Stash all" : ""
+          actionTooltip: "Send every window on this workspace to " + root.workspaceName
+          fontFamily: menuColumn.menuFont
+          onActionClicked: root.stashAll()
         }
 
         Text {
           visible: root.currentWindows.length === 0
           text: "No windows"
-          color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.45)
-          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          color: menuColumn.dimText
+          font.family: menuColumn.menuFont
           font.pixelSize: Style.font.body
           leftPadding: Style.space(8)
           bottomPadding: Style.space(4)
@@ -226,9 +271,11 @@ BarWidget {
             width: menuColumn.width
             toplevel: modelData
             stashed: false
-            actionTooltip: "Send to scratchpad"
-            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            actionTooltip: "Send to " + root.workspaceName
+            fontFamily: menuColumn.menuFont
             onActivated: root.stash(modelData)
+            onFocusRequested: root.focusWindow(modelData)
+            onCloseRequested: root.closeWindow(modelData)
           }
         }
       }

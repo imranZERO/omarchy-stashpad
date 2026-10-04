@@ -10,12 +10,17 @@ Item {
 
   property color color: Color.foreground
   property int badgeCount: 0
+  // A stashed window wants attention: the badge takes this colour.
+  property bool attention: false
+  property color attentionColor: Color.urgent
 
   readonly property real size: Math.min(width, height)
-  // The badge is filled with the icon colour, so the digit takes whichever of
-  // near-black or near-white contrasts with it. Theme colours can't be used:
-  // on a transparent bar the icon and the theme background can both be light.
-  readonly property real luminance: 0.299 * color.r + 0.587 * color.g + 0.114 * color.b
+  // The badge is filled with the icon colour (or the attention colour), so the
+  // digit takes whichever of near-black or near-white contrasts with it. Theme
+  // colours can't be used: on a transparent bar the icon and the theme
+  // background can both be light.
+  readonly property color badgeFill: attention ? attentionColor : color
+  readonly property real luminance: 0.299 * badgeFill.r + 0.587 * badgeFill.g + 0.114 * badgeFill.b
   readonly property color badgeTextColor: luminance > 0.55 ? "#101010" : "#ffffff"
 
   readonly property real stroke: Math.max(1, Math.round(size / 11))
@@ -83,7 +88,8 @@ Item {
     width: Math.max(d, countText.implicitWidth + root.size * 0.22)
     height: d
     radius: height / 2
-    color: root.color
+    color: root.badgeFill
+
     // Pull the badge out past the frame corner.
     x: root.width / 2 + root.size / 2 - root.side - width * 0.55
     y: root.height / 2 - root.size / 2 - height * 0.22
